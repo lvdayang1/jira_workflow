@@ -1,0 +1,8 @@
+{
+  "jira": {
+    "url": "https://your-jira-domain.com",
+    "username": "",
+    "password": ""
+  },
+  "output_dir": "./test_cases"
+}

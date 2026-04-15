@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "jira-workflow": {
+      "command": "python",
+      "args": ["jira_mcp_server.py"],
+      "env": {}
+    }
+  }
+}

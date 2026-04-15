@@ -1,0 +1,4 @@
+playwright
+pyyaml
+python-docx
+openpyxl
