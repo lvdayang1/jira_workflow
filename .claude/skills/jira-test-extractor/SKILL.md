@@ -10,7 +10,7 @@ description: "从 Jira ticket 提取信息生成测试用例。当用户提供 J
 ## 目录结构
 
 ```
-.trae/skills/jira-test-extractor/
+.claude/skills/jira-test-extractor/
 ├── src/                           # Python 源代码
 │   ├── __init__.py
 │   ├── extractor.py               # Jira 信息提取
@@ -36,7 +36,7 @@ Jira Ticket URL → extract_test_cases.py → info.json → AI 生成 test_cases
 ### 步骤 1：提取 Jira 信息
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 python extract_test_cases.py <jira-ticket-url>
 ```
 
@@ -52,7 +52,7 @@ AI 读取 `info.json`，根据 Jira Ticket 内容生成 `test_cases.json`。
 ### 步骤 3：生成测试用例文档
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 
 # 无模板：生成 MD、DOCX、XLSX 默认格式
 python generate_docs.py ./test_cases/<ticket_id>/test_cases.json
@@ -165,7 +165,7 @@ python generate_docs.py ./test_cases/<ticket_id>/test_cases.json -t template.md
 ## 首次使用安装依赖
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 # source .venv/bin/activate  # Linux/Mac

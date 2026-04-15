@@ -252,7 +252,7 @@ def find_project_root():
     """查找项目根目录"""
     current = Path(__file__).resolve()
     for parent in current.parents:
-        if (parent / ".trae").exists() or (parent / "config.json").exists():
+        if (parent / ".claude").exists() or (parent / "config.json").exists():
             return parent
     return Path(os.getcwd())
 
@@ -261,9 +261,9 @@ def find_config_path(project_root):
     """查找配置文件路径"""
     search_paths = [
         project_root / "config.json",
-        project_root / ".trae" / "config.json",
+        project_root / ".claude" / "config.json",
         Path(os.getcwd()) / "config.json",
-        Path(os.getcwd()) / ".trae" / "config.json",
+        Path(os.getcwd()) / ".claude" / "config.json",
     ]
     for path in search_paths:
         if path.exists():

@@ -198,7 +198,7 @@ jira_workflow/
 ├── agents.json                 # Agent 配置
 ├── process_jira_ticket.sh      # 批量处理脚本
 ├── Claude_Code_Integration_Guide.md  # 完整集成文档
-└── .trae/
+└── .claude/
     └── skills/jira-test-extractor/
         ├── extract_test_cases.py    # 阶段1：提取 Jira 信息
         ├── generate_docs.py         # 阶段2：生成测试文档
@@ -249,8 +249,8 @@ claude --debug --print "批量处理 Tickets..."
 ## 📚 更多资源
 
 - **完整集成文档**: `Claude_Code_Integration_Guide.md`
-- **Jira Skill 文档**: `.trae/skills/jira-test-extractor/SKILL.md`
-- **项目说明**: `.trae/README.md`
+- **Jira Skill 文档**: `.claude/skills/jira-test-extractor/SKILL.md`
+- **项目说明**: `.claude/README.md`
 - **Claude Code 官方文档**: `claude --help` 或访问官网
 
 ## 🎯 下一步

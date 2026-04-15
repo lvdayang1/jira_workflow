@@ -22,7 +22,7 @@ jira-test-extractor/
 ### 1. 安装依赖
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 
 # 创建虚拟环境（如果还没有）
 python -m venv .venv
@@ -96,7 +96,7 @@ playwright install chromium
 ### 步骤 1：提取 Jira Ticket 信息
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 python extract_test_cases.py <jira-ticket-url>
 ```
 
@@ -166,7 +166,7 @@ test_cases/PROJECT-123/
 ### 步骤 3：生成测试用例文档
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 
 # 使用模板生成（只生成 Excel，按模板格式）
 python generate_docs.py <test_cases.json> -t <template.xlsx>

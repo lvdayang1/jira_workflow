@@ -11,7 +11,7 @@ from pathlib import Path
 
 # 添加项目路径
 _current_dir = Path(__file__).parent
-_skill_dir = _current_dir / ".trae" / "skills" / "jira-test-extractor"
+_skill_dir = _current_dir / ".claude" / "skills" / "jira-test-extractor"
 _src_dir = _skill_dir / "src"
 sys.path.insert(0, str(_src_dir))
 

@@ -27,7 +27,7 @@ claude --help
 ### 2. 确认 Python 环境
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 
 # 激活虚拟环境
 .venv\Scripts\activate  # Windows
@@ -39,7 +39,7 @@ pip list | grep -E "requests|openpyxl|python-docx"
 
 ### 3. Jira 配置确认
 
-确保 `.trae/skills/jira-test-extractor/config.json` 已正确配置：
+确保 `.claude/skills/jira-test-extractor/config.json` 已正确配置：
 
 ```json
 {
@@ -77,7 +77,7 @@ import json
 from pathlib import Path
 
 # 添加项目路径
-_skill_dir = Path(__file__).parent / ".trae" / "skills" / "jira-test-extractor"
+_skill_dir = Path(__file__).parent / ".claude" / "skills" / "jira-test-extractor"
 _src_dir = _skill_dir / "src"
 sys.path.insert(0, str(_src_dir))
 
@@ -398,7 +398,7 @@ claude --print "请处理以下 Jira Tickets：
 1. 确认工具路径正确：
 
 ```bash
-cd .trae/skills/jira-test-extractor
+cd .claude/skills/jira-test-extractor
 python extract_test_cases.py --help
 ```
 
@@ -406,7 +406,7 @@ python extract_test_cases.py --help
 
 ```bash
 # Windows PowerShell
-New-Item -ItemType SymbolicLink -Path "C:\ProgramData\claude-tools\jira-extract.cmd" -Target ".trae\skills\jira-test-extractor\extract_test_cases.py"
+New-Item -ItemType SymbolicLink -Path "C:\ProgramData\claude-tools\jira-extract.cmd" -Target ".claude\skills\jira-test-extractor\extract_test_cases.py"
 ```
 
 ### Q2: MCP 服务器连接失败？
@@ -420,7 +420,7 @@ New-Item -ItemType SymbolicLink -Path "C:\ProgramData\claude-tools\jira-extract.
   "servers": {
     "jira-workflow": {
       "command": "python",
-      "args": [".trae/skills/jira-test-extractor/jira_mcp_server.py"],
+      "args": [".claude/skills/jira-test-extractor/jira_mcp_server.py"],
       "env": {}
     }
   }
@@ -430,7 +430,7 @@ New-Item -ItemType SymbolicLink -Path "C:\ProgramData\claude-tools\jira-extract.
 2. 手动测试 MCP 服务器：
 
 ```bash
-python .trae/skills/jira-test-extractor/jira_mcp_server.py
+python .claude/skills/jira-test-extractor/jira_mcp_server.py
 ```
 
 ### Q3: 如何在 VSCode 中使用 Claude Code？
@@ -510,5 +510,5 @@ claude --agent jira-processor "批量处理以下 Tickets: PROJECT-123, PROJECT-
 
 如有问题，请参考：
 - Claude Code 官方文档：`claude --help`
-- 项目文档：`.trae/README.md`
-- 技能文档：`.trae/skills/jira-test-extractor/SKILL.md`
+- 项目文档：`.claude/README.md`
+- 技能文档：`.claude/skills/jira-test-extractor/SKILL.md`
