@@ -8,5 +8,6 @@ test_cases/**
 .claude/skills/jira-test-extractor/test_cases/**
 .claude/skills/jira-test-extractor/.venv/**
 .claude/skills/jira-test-extractor/__pycache__/**
+.claude/skills/jira-test-extractor/src/__pycache__/**
 .vscode/
 settings.local.json
