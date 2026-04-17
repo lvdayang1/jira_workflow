@@ -8,27 +8,51 @@ import json
 import click
 
 
-def get_base_path():
-    """Get the base path for resources, handling PyInstaller onefile bundling."""
+def get_bundle_dir():
+    """Get the bundle directory for PyInstaller onefile, or the script directory."""
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         # Running as compiled onefile executable
         return sys._MEIPASS
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    elif getattr(sys, 'frozen', False):
+        # Running as compiled (not onefile)
+        return os.path.dirname(sys.executable)
+    else:
+        # Running as script
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-# Add src directory to path
-_skill_dir = get_base_path()
-_src_dir = os.path.join(_skill_dir, "src")
-if _src_dir not in sys.path:
-    sys.path.insert(0, _src_dir)
+# Base directory for bundled resources
+BUNDLE_DIR = get_bundle_dir()
 
-from extractor import (
-    JiraExtractor, load_config, save_ticket_data,
-    find_project_root, find_config_path, resolve_output_dir
-)
+# Add src directory to path for imports
+SRC_DIR = os.path.join(BUNDLE_DIR, "src")
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
+from extractor import JiraExtractor, load_config, save_ticket_data
 from attachment_reader import read_attachment
 from generator import convert_to_docs
-from template_parser import TemplateParser
+
+
+def find_config():
+    """Find config file, checking multiple locations."""
+    search_paths = [
+        os.path.join(os.getcwd(), "config.json.local"),
+        os.path.join(os.getcwd(), ".claude", "config.json.local"),
+        os.path.join(os.getcwd(), "config.json"),
+        os.path.join(os.getcwd(), ".claude", "config.json"),
+        os.path.join(BUNDLE_DIR, "config.json.local"),
+        os.path.join(BUNDLE_DIR, "config.json"),
+    ]
+    for path in search_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def get_default_output_dir():
+    """Get default output directory."""
+    return os.path.join(os.getcwd(), "test_cases")
 
 
 @click.group()
@@ -45,14 +69,18 @@ def cli():
 @click.option("--no-download", is_flag=True, help="Skip attachment download")
 def extract(ticket, config_path, output, no_download):
     """Extract Jira ticket information to info.json"""
-    project_root = find_project_root()
-    config_path = config_path if config_path else find_config_path(project_root)
-    output_dir = output if output else os.path.join(_skill_dir, "test_cases")
-    output_dir = resolve_output_dir(output_dir, project_root)
-
+    output_dir = output if output else get_default_output_dir()
     os.makedirs(output_dir, exist_ok=True)
 
-    click.echo(f"项目根目录: {project_root}")
+    if config_path is None:
+        config_path = find_config()
+
+    if config_path is None or not os.path.exists(config_path):
+        click.echo(f"错误: 配置文件不存在: {config_path}", err=True)
+        click.echo("请使用 --config 指定配置文件，或在当前目录/.claude/目录放置 config.json", err=True)
+        sys.exit(1)
+
+    click.echo(f"配置: {config_path}")
     click.echo(f"输出目录: {output_dir}")
     click.echo(f"正在连接 Jira...")
 
@@ -94,30 +122,18 @@ def read_attachments(ticket_id, config_path, output):
     """Download and read all attachments from a ticket"""
     ticket_id = ticket_id.upper()
 
-    # Determine config path
-    if config_path:
-        config_path = config_path
-    else:
-        search_paths = [
-            os.path.join(_skill_dir, "config.json.local"),
-            os.path.join(_skill_dir, "config.json"),
-        ]
-        for path in search_paths:
-            if os.path.exists(path):
-                config_path = path
-                break
-        else:
-            config_path = os.path.join(_skill_dir, "config.json")
+    if config_path is None:
+        config_path = find_config()
 
-    if not os.path.exists(config_path):
+    if config_path is None or not os.path.exists(config_path):
         click.echo(f"错误: 配置文件不存在: {config_path}", err=True)
         sys.exit(1)
 
     config = load_config(config_path)
 
     # Determine output directory and info.json path
-    output_dir = os.path.join(_skill_dir, "test_cases", ticket_id)
-    info_path = os.path.join(output_dir, "info.json")
+    output_dir = get_default_output_dir()
+    info_path = os.path.join(output_dir, ticket_id, "info.json")
 
     if not os.path.exists(info_path):
         click.echo(f"错误: 找不到 {info_path}，请先运行 extract 命令", err=True)
@@ -127,7 +143,7 @@ def read_attachments(ticket_id, config_path, output):
         info = json.load(f)
 
     # Download attachments if needed
-    attachments_dir = os.path.join(output_dir, "attachments")
+    attachments_dir = os.path.join(output_dir, ticket_id, "attachments")
     os.makedirs(attachments_dir, exist_ok=True)
 
     needs_download = any('url' in att and 'path' not in att for att in info['attachments'])
@@ -208,7 +224,7 @@ def read_attachments(ticket_id, config_path, output):
             json.dump(combined, f, ensure_ascii=False, indent=2)
         click.echo(f"\n组合内容已保存到: {output}")
     else:
-        output_default = os.path.join(output_dir, "combined_content.json")
+        output_default = os.path.join(output_dir, ticket_id, "combined_content.json")
         with open(output_default, 'w', encoding='utf-8') as f:
             json.dump(combined, f, ensure_ascii=False, indent=2)
         click.echo(f"\n组合内容已保存到: {output_default}")
@@ -271,7 +287,7 @@ def generate(input_file, output, template):
 def init(output):
     """Interactively create a config.json file"""
     if output is None:
-        output = os.path.join(_skill_dir, "config.json")
+        output = os.path.join(os.getcwd(), "config.json")
 
     click.echo("=== Jira Test Extractor 配置初始化 ===\n")
 
@@ -301,12 +317,12 @@ def init(output):
 def template_cmd(output):
     """Create a default Excel template file"""
     if output is None:
-        output = os.path.join(_skill_dir, "templates", "default_template.xlsx")
+        output = os.path.join(os.getcwd(), "template.xlsx")
 
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    os.makedirs(os.path.dirname(output) if os.path.dirname(output) else '.', exist_ok=True)
 
     wb = Workbook()
     ws = wb.active
@@ -361,7 +377,7 @@ def help_cmd():
 1. 提取 Jira Ticket 信息:
     jira-workflow extract PROJECT-123
     jira-workflow extract https://jira.example.com/browse/PROJECT-123
-    jira-workflow extract PROJECT-123 -o ./output
+    jira-workflow extract PROJECT-123 -o ./output --config ./config.json
 
 2. 读取附件内容:
     jira-workflow read-attachments PROJECT-123
@@ -372,7 +388,7 @@ def help_cmd():
     jira-workflow generate test_cases.json -t template.xlsx
 
 4. 初始化配置:
-    jira-workflow init
+    jira-workflow init -o ./config.json
 
 5. 创建模板:
     jira-workflow template -o my_template.xlsx
