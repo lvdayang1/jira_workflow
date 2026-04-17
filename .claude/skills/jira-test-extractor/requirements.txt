@@ -2,3 +2,5 @@ playwright
 pyyaml
 python-docx
 openpyxl
+python-pptx
+Pillow

@@ -198,7 +198,7 @@ class JiraExtractor:
                     filepath = self._get_unique_filename(filepath)
                     actual_filename = os.path.basename(filepath)
                     with open(filepath, "wb") as f:
-                        f.write(response.body())
+                        f.write(response.content)
                     downloaded.append({
                         "filename": actual_filename,
                         "path": filepath,

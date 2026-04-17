@@ -15,7 +15,8 @@ description: "从 Jira ticket 提取信息生成测试用例。当用户提供 J
 │   ├── __init__.py
 │   ├── extractor.py               # Jira 信息提取
 │   ├── generator.py               # 文档生成
-│   └── template_parser.py         # 模板解析
+│   ├── template_parser.py         # 模板解析
+│   └── attachment_reader.py       # 附件读取器
 ├── templates/                      # 模板目录
 │   └── default_template.xlsx      # 默认模板
 ├── .venv/                         # Python 虚拟环境
@@ -23,6 +24,7 @@ description: "从 Jira ticket 提取信息生成测试用例。当用户提供 J
 ├── config.json.example            # 配置模板
 ├── requirements.txt               # 依赖列表
 ├── extract_test_cases.py          # 阶段1入口：提取 Jira 信息
+├── read_attachments.py           # 附件读取：读取所有附件内容
 ├── generate_docs.py               # 阶段2入口：生成测试用例文档
 └── create_template.py             # 创建默认模板
 ```
@@ -48,6 +50,29 @@ python extract_test_cases.py <jira-ticket-id>
 1. 使用配置文件中的凭据连接 Jira
 2. 提取 ticket 的描述、评论、附件信息
 3. 将信息保存到 `./test_cases/<ticket_id>/info.json`
+
+### 步骤 1.5：读取所有附件内容
+
+```bash
+cd .claude/skills/jira-test-extractor
+python read_attachments.py <ticket-id> [-o combined_content.json]
+```
+
+支持读取以下附件格式：
+| 格式 | 说明 |
+|------|------|
+| `.pptx` | PowerPoint 文件，提取所有幻灯片文本 |
+| `.docx` | Word 文件，提取段落和表格内容 |
+| `.xlsx` / `.xls` | Excel 文件，提取单元格内容 |
+| `.pdf` | PDF 文件（需要 PyPDF2 或 pdfplumber） |
+| `.png` / `.jpg` | 图片文件，提取尺寸和 OCR 文本（需要 pytesseract） |
+| `.txt` / `.md` / `.log` | 文本文件，直接读取内容 |
+
+输出内容包含：
+- Ticket 基本信息（标题、状态、优先级）
+- 描述文本
+- 评论列表
+- 所有附件的完整文本内容
 
 ### 步骤 2：AI 生成测试用例 JSON
 
@@ -164,6 +189,8 @@ python generate_docs.py ./test_cases/<ticket_id>/test_cases.json -t template.md
 | requests | HTTP 请求，用于 Jira API |
 | openpyxl | Excel 文件读写，解析模板和生成文档 |
 | python-docx | Word 文档生成 |
+| python-pptx | PowerPoint 文件读取 |
+| Pillow | 图片处理和 OCR 支持 |
 | lxml | XML/HTML 解析 |
 
 ## 首次使用安装依赖
@@ -173,7 +200,7 @@ cd .claude/skills/jira-test-extractor
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 # source .venv/bin/activate  # Linux/Mac
-pip install requests openpyxl python-docx lxml
+pip install requests openpyxl python-docx python-pptx Pillow lxml
 ```
 
 ## AI 生成测试用例的提示词
