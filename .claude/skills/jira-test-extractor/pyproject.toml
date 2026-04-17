@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jira-workflow"
+version = "1.0.0"
+description = "Jira Test Extractor - Unified CLI for extracting Jira tickets and generating test case documents"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "click>=8.0.0",
+    "playwright",
+    "pyyaml",
+    "python-docx",
+    "openpyxl",
+    "python-pptx",
+    "Pillow",
+]
+
+[project.scripts]
+jira-workflow = "src.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/your-repo/jira-workflow"
