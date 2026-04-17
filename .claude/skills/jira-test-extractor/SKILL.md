@@ -1,6 +1,6 @@
 ---
 name: "jira-test-extractor"
-description: "从 Jira ticket 提取信息生成测试用例。当用户提供 Jira URL 或需要从 Jira ticket 提取测试用例时调用此 skill。"
+description: "从 Jira ticket 提取信息生成测试用例。当用户提供 Jira 单号或 URL 时调用此 skill。"
 ---
 
 # Jira Test Case Extractor
@@ -37,8 +37,12 @@ Jira Ticket URL → extract_test_cases.py → info.json → AI 生成 test_cases
 
 ```bash
 cd .claude/skills/jira-test-extractor
-python extract_test_cases.py <jira-ticket-url>
+python extract_test_cases.py <jira-ticket-id>
 ```
+
+支持两种输入方式：
+- 只需 Jira 单号：`python extract_test_cases.py PROJECT-123`
+- 完整 URL：`python extract_test_cases.py https://jira.example.com/browse/PROJECT-123`
 
 脚本会：
 1. 使用配置文件中的凭据连接 Jira

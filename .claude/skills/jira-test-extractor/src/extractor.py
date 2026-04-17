@@ -123,18 +123,24 @@ class JiraExtractor:
             counter += 1
         return filepath
 
-    def extract_ticket(self, url):
+    def extract_ticket(self, ticket):
         """
         提取 Ticket 信息
 
         Args:
-            url: Jira Ticket URL
+            ticket: Jira Ticket URL 或 Ticket ID（如 "PROJ-123"）
 
         Returns:
             包含 ticket 信息的字典
         """
-        ticket_id = self._extract_ticket_id(url)
-        url = self._fix_url(url)
+        # 判断是 URL 还是纯 ticket ID
+        if "/" in ticket or "://" in ticket:
+            ticket_id = self._extract_ticket_id(ticket)
+            url = self._fix_url(ticket)
+        else:
+            # 纯 ticket ID，直接使用
+            ticket_id = ticket.upper()
+            url = f"{self.jira_url}/browse/{ticket_id}"
 
         print(f"正在通过 REST API 获取 Ticket 信息...", flush=True)
         api_url = f"/rest/api/2/issue/{ticket_id}?fields=summary,status,priority,assignee,reporter,created,updated,description,comment,attachment"
@@ -260,15 +266,19 @@ def find_project_root():
 def find_config_path(project_root):
     """查找配置文件路径"""
     search_paths = [
+        project_root / "config.json.local",
+        project_root / ".claude" / "config.json.local",
         project_root / "config.json",
         project_root / ".claude" / "config.json",
+        Path(os.getcwd()) / "config.json.local",
+        Path(os.getcwd()) / ".claude" / "config.json.local",
         Path(os.getcwd()) / "config.json",
         Path(os.getcwd()) / ".claude" / "config.json",
     ]
     for path in search_paths:
         if path.exists():
             return path
-    return project_root / "config.json"
+    return project_root / "config.json.local"
 
 
 def resolve_output_dir(output_dir, project_root):
@@ -283,7 +293,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="从 Jira Ticket 提取信息并保存到文件夹")
-    parser.add_argument("ticket_url", help="Jira Ticket 的 URL")
+    parser.add_argument("ticket", help="Jira Ticket ID 或完整 URL（如 PROJECT-123）")
     parser.add_argument("--config", default=None, help="配置文件路径")
     parser.add_argument("--output", default=None, help="输出根目录")
     parser.add_argument("--no-download", action="store_true", help="不下载附件")
@@ -305,8 +315,8 @@ if __name__ == "__main__":
     extractor.connect()
 
     try:
-        print(f"正在提取 Ticket 信息：{args.ticket_url}", flush=True)
-        ticket_data = extractor.extract_ticket(args.ticket_url)
+        print(f"正在提取 Ticket 信息：{args.ticket}", flush=True)
+        ticket_data = extractor.extract_ticket(args.ticket)
         print(f"已提取：{ticket_data['summary']}", flush=True)
         print(f"状态：{ticket_data['status']}", flush=True)
         print(f"优先级：{ticket_data['priority']}", flush=True)

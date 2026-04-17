@@ -4,7 +4,11 @@
 Jira Ticket 信息提取器 - 入口脚本
 
 用法:
-    python extract_test_cases.py <jira-ticket-url> [--config config.json] [--output ./test_cases] [--no-download]
+    python extract_test_cases.py <jira-ticket-id> [--config config.json] [--output ./test_cases] [--no-download]
+
+示例:
+    python extract_test_cases.py PROJECT-123
+    python extract_test_cases.py https://jira.example.com/browse/PROJECT-123
 """
 import os
 import sys
@@ -24,7 +28,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="从 Jira Ticket 提取信息并保存到文件夹")
-    parser.add_argument("ticket_url", help="Jira Ticket 的 URL")
+    parser.add_argument("ticket", help="Jira Ticket ID 或完整 URL（如 PROJECT-123）")
     parser.add_argument("--config", default=None, help="配置文件路径")
     parser.add_argument("--output", default=None, help="输出根目录")
     parser.add_argument("--no-download", action="store_true", help="不下载附件")
@@ -46,8 +50,8 @@ def main():
     extractor.connect()
 
     try:
-        print(f"正在提取 Ticket 信息：{args.ticket_url}", flush=True)
-        ticket_data = extractor.extract_ticket(args.ticket_url)
+        print(f"正在提取 Ticket 信息：{args.ticket}", flush=True)
+        ticket_data = extractor.extract_ticket(args.ticket)
         print(f"已提取：{ticket_data['summary']}", flush=True)
         print(f"状态：{ticket_data['status']}", flush=True)
         print(f"优先级：{ticket_data['priority']}", flush=True)
