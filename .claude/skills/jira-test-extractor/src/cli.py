@@ -7,8 +7,17 @@ import sys
 import json
 import click
 
+
+def get_base_path():
+    """Get the base path for resources, handling PyInstaller onefile bundling."""
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running as compiled onefile executable
+        return sys._MEIPASS
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 # Add src directory to path
-_skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_skill_dir = get_base_path()
 _src_dir = os.path.join(_skill_dir, "src")
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
