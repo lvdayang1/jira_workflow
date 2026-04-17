@@ -191,10 +191,22 @@ class JiraExtractor:
         for att in attachments:
             filename = att["filename"]
             url = att["url"]
+            filepath = os.path.join(att_dir, filename)
+
+            # 跳过已存在的附件
+            if os.path.exists(filepath):
+                actual_filename = os.path.basename(filepath)
+                downloaded.append({
+                    "filename": actual_filename,
+                    "path": filepath,
+                    "status": "exists"
+                })
+                print(f"  跳过(已存在): {actual_filename}", flush=True)
+                continue
+
             try:
                 response = self.session.get(url)
                 if response.ok:
-                    filepath = os.path.join(att_dir, filename)
                     filepath = self._get_unique_filename(filepath)
                     actual_filename = os.path.basename(filepath)
                     with open(filepath, "wb") as f:
