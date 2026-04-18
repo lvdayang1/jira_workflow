@@ -355,6 +355,111 @@ def template_cmd(output):
     click.echo(f"默认模板已创建: {output}")
 
 
+@cli.command()
+@click.argument("ticket")
+@click.option("--config", "-c", "config_path", default=None, help="Path to config.json")
+@click.option("--output", "-o", default=None, help="Output directory")
+@click.option("--template", "-t", default=None, help="Template file for document generation")
+def quick(ticket, config_path, output, template):
+    """One-click: extract ticket, read attachments, and generate test case documents"""
+    output_dir = output if output else get_default_output_dir()
+    os.makedirs(output_dir, exist_ok=True)
+
+    if config_path is None:
+        config_path = find_config()
+
+    if config_path is None or not os.path.exists(config_path):
+        click.echo(f"错误: 配置文件不存在: {config_path}", err=True)
+        click.echo("请使用 --config 指定配置文件，或在当前目录/.claude/目录放置 config.json", err=True)
+        sys.exit(1)
+
+    config = load_config(config_path)
+    extractor = JiraExtractor(config)
+    extractor.connect()
+
+    try:
+        # Step 1: Extract ticket info
+        click.echo("=" * 60)
+        click.echo("步骤 1/3: 提取 Ticket 信息...")
+        click.echo("=" * 60)
+        ticket_data = extractor.extract_ticket(ticket)
+        click.echo(f"  Ticket: {ticket_data['id']}")
+        click.echo(f"  标题: {ticket_data['summary']}")
+        click.echo(f"  状态: {ticket_data['status']}")
+
+        if ticket_data["attachments"]:
+            click.echo(f"  附件数: {len(ticket_data['attachments'])}")
+            click.echo("\n正在下载附件...")
+            ticket_data["attachments"] = extractor.download_attachments(
+                ticket_data["id"],
+                ticket_data["attachments"],
+                output_dir
+            )
+
+        ticket_dir = save_ticket_data(ticket_data, output_dir)
+
+        # Step 2: Read attachment contents
+        click.echo("\n" + "=" * 60)
+        click.echo("步骤 2/3: 读取附件内容...")
+        click.echo("=" * 60)
+
+        info_path = os.path.join(output_dir, ticket_data["id"], "info.json")
+        attachments_dir = os.path.join(output_dir, ticket_data["id"], "attachments")
+
+        attachment_contents = []
+        if ticket_data["attachments"]:
+            for att in ticket_data["attachments"]:
+                filepath = att.get("path")
+                if filepath and os.path.exists(filepath):
+                    click.echo(f"  读取: {att['filename']}")
+                    content = read_attachment(filepath)
+                    if content and not content.startswith('[不支持'):
+                        attachment_contents.append({
+                            'filename': att['filename'],
+                            'content': content
+                        })
+        else:
+            click.echo("  (无附件)")
+
+        # Save combined content
+        combined = {
+            'ticket_id': ticket_data['id'],
+            'summary': ticket_data.get('summary', ''),
+            'status': ticket_data.get('status', ''),
+            'priority': ticket_data.get('priority', ''),
+            'description': ticket_data.get('description', ''),
+            'comments': ticket_data.get('comments', []),
+            'attachments_summary': [
+                {'filename': a['filename'], 'content_preview': a['content'][:500] + '...' if len(a['content']) > 500 else a['content']}
+                for a in attachment_contents
+            ],
+            'full_attachment_contents': attachment_contents
+        }
+
+        combined_path = os.path.join(output_dir, ticket_data["id"], "combined_content.json")
+        with open(combined_path, 'w', encoding='utf-8') as f:
+            json.dump(combined, f, ensure_ascii=False, indent=2)
+        click.echo(f"\n组合内容已保存: {combined_path}")
+
+        # Step 3: Generate test case documents
+        click.echo("\n" + "=" * 60)
+        click.echo("步骤 3/3: 生成测试用例文档...")
+        click.echo("=" * 60)
+
+        input_file = combined_path
+        files = convert_to_docs(input_file, output_dir, template)
+        click.echo(f"\n转换完成！共生成 {len(files)} 个文件:")
+        for f in files:
+            click.echo(f"  - {f}")
+
+        click.echo("\n" + "=" * 60)
+        click.echo("全部完成！")
+        click.echo("=" * 60)
+
+    finally:
+        extractor.disconnect()
+
+
 @cli.command("help")
 def help_cmd():
     """Show help message with usage examples"""
@@ -365,6 +470,7 @@ def help_cmd():
     jira-workflow <command> [options]
 
 命令:
+    quick <ticket>             一键生成测试用例（提取+附件+生成文档）
     extract <ticket>           从 Jira Ticket 提取信息到 info.json
     read-attachments <ticket>  下载并读取 Ticket 的所有附件内容
     generate <file>            将 JSON 测试用例转换为文档格式
@@ -374,23 +480,28 @@ def help_cmd():
 
 示例:
 
-1. 提取 Jira Ticket 信息:
+1. 一键生成测试用例（推荐）:
+    jira-workflow quick PROJECT-123
+    jira-workflow quick PROJECT-123 -o ./output
+    jira-workflow quick https://jira.example.com/browse/PROJECT-123
+
+2. 提取 Jira Ticket 信息:
     jira-workflow extract PROJECT-123
     jira-workflow extract https://jira.example.com/browse/PROJECT-123
     jira-workflow extract PROJECT-123 -o ./output --config ./config.json
 
-2. 读取附件内容:
+3. 读取附件内容:
     jira-workflow read-attachments PROJECT-123
     jira-workflow read-attachments PROJECT-123 -o combined.json
 
-3. 生成测试用例文档:
+4. 生成测试用例文档:
     jira-workflow generate test_cases.json
     jira-workflow generate test_cases.json -t template.xlsx
 
-4. 初始化配置:
+5. 初始化配置:
     jira-workflow init -o ./config.json
 
-5. 创建模板:
+6. 创建模板:
     jira-workflow template -o my_template.xlsx
 
 配置:
