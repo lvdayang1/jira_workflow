@@ -7,7 +7,53 @@ import json
 import re
 import base64
 from pathlib import Path
-import requests
+import urllib.request
+import urllib.parse
+import http.cookiejar
+
+
+class SessionResponse:
+    """urllib.response 包装类，提供 requests.Response 兼容接口"""
+
+    def __init__(self, response):
+        self._response = response
+        self._content = None
+
+    @property
+    def ok(self):
+        return 200 <= self.status_code < 400
+
+    @property
+    def status_code(self):
+        return self._response.status
+
+    @property
+    def content(self):
+        if self._content is None:
+            self._content = self._response.read()
+        return self._content
+
+    def json(self):
+        return json.loads(self.content)
+
+
+class Session:
+    """urllib.request 包装类，提供 requests.Session 兼容接口"""
+
+    def __init__(self):
+        self.headers = {}
+        cookie_jar = http.cookiejar.CookieJar()
+        self._opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cookie_jar)
+        )
+
+    def get(self, url):
+        request = urllib.request.Request(url, headers=self.headers)
+        response = self._opener.open(request)
+        return SessionResponse(response)
+
+    def close(self):
+        self._opener.close()
 
 
 class JiraExtractor:
@@ -22,7 +68,7 @@ class JiraExtractor:
         """
         self.config = config
         self.jira_url = config["jira"]["url"].rstrip("/")
-        self.session = requests.Session()
+        self.session = Session()
         self._setup_auth()
 
     def _setup_auth(self):

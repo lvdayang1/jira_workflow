@@ -22,7 +22,6 @@ else:
         'pptx',
         'PIL',
         'yaml',
-        'requests',
         'PyPDF2',
         'pdfplumber',
         'pytesseract',
