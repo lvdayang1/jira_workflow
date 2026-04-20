@@ -25,6 +25,7 @@ DEFAULT_FIELDS = [
 STANDARD_FIELD_MAPPING = {
     "用例编号": "id",
     "用例标题": "name",
+    "标题": "name",
     "测试模块": "module",
     "测试类型": "type",
     "优先级": "priority",

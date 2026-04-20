@@ -11,3 +11,4 @@ test_cases/**
 .claude/skills/jira-test-extractor/src/__pycache__/**
 .vscode/
 settings.local.json
+test_output/
